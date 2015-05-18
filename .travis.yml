@@ -1,0 +1,44 @@
+# Config file for automatic testing at travis-ci.org
+language: python
+
+python:
+  - "2.7"
+
+# Anaconda information comes from https://gist.github.com/dan-blanchard/7045057
+# Setup anaconda
+before_install:
+  # Use these lines if any matplotlib windows or figures
+  # may be created by your tests
+  # See http://goo.gl/YHoM5h
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  # You may want to periodically update this, although the
+  # conda update conda line below will keep everything up-to-date. 
+  # We do this conditionally because it saves us some downloading
+  # if the version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget http://repo.continuum.io/miniconda/Miniconda-3.7.3-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget http://repo.continuum.io/miniconda/Miniconda3-3.7.3-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - export ENV_NAME=travis
+# Install packages
+install:
+  - conda create -q -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION pip
+  - source activate $ENV_NAME
+  # Manually install complicated / binary packages here
+  # (Atlas is a linear algebra library for numpy to use on linux)
+  - conda install atlas numpy scipy matplotlib
+  # This should install any additional pip dependencies and your package
+  - python setup.py install
+
+# Run tests
+script:
+  - python setup.py test
