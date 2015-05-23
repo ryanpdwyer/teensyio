@@ -27,6 +27,9 @@ MANIFEST
 # Installer logs
 pip-log.txt
 
+# Package test log
+*.log.txt
+
 # Unit test / coverage reports
 .coverage
 nosetests.xml
