@@ -5,7 +5,6 @@ Tests for `teensyio` module.
 import unittest
 import teensyio
 
-
 class TestTeensyio(unittest.TestCase):
 
     def setUp(self):
