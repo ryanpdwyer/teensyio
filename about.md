@@ -21,4 +21,4 @@ A lot of subtle bugs / serial issues when I tried to send / read data quickly. N
 
 Matplotlib taking up too much time? Still this is functioning for now.
 
-No problems if I use a 50 ms delay between data points.
+No problems if I use a 50 ms delay between data points. No missed data points. No problems with a 5 ms delay between data points either. With a 0.5 ms delay between data points, there were a few missed data points / broken lines, all of which looked like, `100 100\r\n200 200`.

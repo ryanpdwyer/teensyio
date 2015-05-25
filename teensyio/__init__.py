@@ -18,7 +18,6 @@ from serial.tools.list_ports import comports
 import time
 import pandas as pd
 from time import sleep
-import threading
 
 def ls_ports():
     return [x for x in comports()]
@@ -53,7 +52,7 @@ def find_teensy():
 
 
 def parse_int(line):
-    return [int(x) for x in line.strip('\r\n').split(' ')]
+    return [int(x) for x in line.strip('\n').split(' ')]
 
 
 def log_message(message):
@@ -63,22 +62,18 @@ def log_message(message):
 def parse_line_generic(line, x, y, log, strip='\r\n'):
     line_stripped = line.strip(strip)
     if line_stripped == '':
-        raise ValueError
+        return None
     try:
         data = [int(i) for i in line_stripped.split(' ')]
         if len(data) == 2:
-            if ((data[0] < 2**16) and (data[0] > -2**16) and
-               (data[1] < 2**16) and (data[1] > -2**16)):
-                x.append(data[0])
-                y.append(data[1])
-            else:
-                log.append(log_message(data))
+            x.append(data[0])
+            y.append(data[1])
         else:
             log.append(log_message(data))
         return data
     except ValueError:
         log.append(log_message(line_stripped))
-        raise
+        return None
 
 
 # def parse_line(line, data, log, stop_message):
@@ -133,17 +128,17 @@ class TeensyIO(object):
             return line,
 
         left_over = [""]
+        # Replace with gen = arbitrary_line_split(self.s)
+        # and in animate, serial_lines = gen.next()
+        # this is tested, and should be quite robust
         def animate(i):
             try:
                 bytesToRead = self.s.inWaiting()
-                serial_lines = self.s.read(bytesToRead).split('\r\n')
+                serial_lines = self.s.read(bytesToRead).split('\n')
                 serial_lines[0] = left_over[0] + serial_lines[0]
                 left_over[0] = serial_lines.pop()
                 for line_ in serial_lines:
-                    try:
-                        parse_line_generic(line_, self.x, self.y, self.log)
-                    except ValueError:
-                        pass
+                    parse_line_generic(line_, self.x, self.y, self.log)
                 # I could check for "stop message if necessary."
                 print i
             except KeyboardInterrupt:
@@ -153,18 +148,19 @@ class TeensyIO(object):
             
             line.set_data(self.x, self.y)
             return line,
-
+        
         anim = animation.FuncAnimation(fig, animate, frames=frames, repeat=False, 
-                                        init_func=init, interval=100,
+                                        init_func=init, interval=50,
                                 blit=True)
-
+        
         plt.show()
 
-        sleep(2)
-
-        plt.close()
-
         self.s.write('s')
+
+        lines = self.s.readlines()
+        for line in lines:
+            parse_line_generic(line, self.x, self.y, self.log)
+
 
         self._make_df()
 
@@ -182,9 +178,17 @@ class TeensyIO(object):
     def save_df(self, filename):
         self.df.to_csv(filename)
 
-
-
-
+def arbitrary_line_split(buf, newline='\n', return_if_empty=False):
+    left_over = ""
+    while True:
+        bytesToRead = buf.inWaiting()
+        lines = buf.read(bytesToRead).split(newline)
+        lines[0] = left_over + lines[0]
+        left_over = lines.pop()
+        if return_if_empty:
+            if (len(lines) == 0) and (left_over == ''):
+                return
+        yield lines
 
 
 def test_run():
@@ -205,6 +209,7 @@ def test_plot():
     t.run_and_plot()
     t.s.write('s')
     t.save_df('test_plot.csv')
+    t.save('test_plot.log.txt')
 
 def test():
     test_plot()
