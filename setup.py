@@ -45,7 +45,7 @@ setup(
 
     # Add requirements here. If the requirement is difficult to install,
     # add to docs/conf.py MAGIC_MOCK, and .travis.yml 'conda install ...'
-    install_requires=['serial'],
+    install_requires=['numpy', 'scipy', 'pySerial', 'matplotlib'],
 
     tests_require=['nose'],
     test_suite='nose.collector',
