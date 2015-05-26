@@ -35,7 +35,7 @@ install:
   - source activate $ENV_NAME
   # Manually install complicated / binary packages here
   # (Atlas is a linear algebra library for numpy to use on linux)
-  - conda install atlas numpy scipy matplotlib
+  - conda install atlas numpy scipy matplotlib pandas nose
   # This should install any additional pip dependencies and your package
   - python setup.py install
 

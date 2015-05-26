@@ -22,3 +22,9 @@ A lot of subtle bugs / serial issues when I tried to send / read data quickly. N
 Matplotlib taking up too much time? Still this is functioning for now.
 
 No problems if I use a 50 ms delay between data points. No missed data points. No problems with a 5 ms delay between data points either. With a 0.5 ms delay between data points, there were a few missed data points / broken lines, all of which looked like, `100 100\r\n200 200`.
+
+I rewrote the code getting the data from the serial port as a generator; it seems to work almost perfectly!
+
+Next steps are adding a python method to set up the experiment, and adding code to actually run / simulate the experiment better on the Teensy.
+
+I should also check performance on Windows at some point, and check whether I can run this in an IPython notebook (It will probably / should probably open a new window for this).

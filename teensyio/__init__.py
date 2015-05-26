@@ -78,6 +78,18 @@ def parse_line_generic(line, x, y, log, strip='\r\n'):
 
 # def parse_line(line, data, log, stop_message):
 
+def arbitrary_line_split(buf, newline='\n', return_if_empty=False):
+    left_over = ""
+    while True:
+        bytesToRead = buf.inWaiting()
+        lines = buf.read(bytesToRead).split(newline)
+        lines[0] = left_over + lines[0]
+        left_over = lines.pop()
+        if return_if_empty:
+            if (len(lines) == 0) and (left_over == ''):
+                return
+        yield lines
+
 
 class TeensyIO(object):
 
@@ -123,20 +135,15 @@ class TeensyIO(object):
 
         self.s.write('r')
 
+        gen = arbitrary_line_split(self.s)
+
         def init():
             line.set_data([], [], )
             return line,
 
-        left_over = [""]
-        # Replace with gen = arbitrary_line_split(self.s)
-        # and in animate, serial_lines = gen.next()
-        # this is tested, and should be quite robust
         def animate(i):
             try:
-                bytesToRead = self.s.inWaiting()
-                serial_lines = self.s.read(bytesToRead).split('\n')
-                serial_lines[0] = left_over[0] + serial_lines[0]
-                left_over[0] = serial_lines.pop()
+                serial_lines = gen.next()
                 for line_ in serial_lines:
                     parse_line_generic(line_, self.x, self.y, self.log)
                 # I could check for "stop message if necessary."
@@ -151,7 +158,7 @@ class TeensyIO(object):
         
         anim = animation.FuncAnimation(fig, animate, frames=frames, repeat=False, 
                                         init_func=init, interval=50,
-                                blit=True)
+                                        blit=True)
         
         plt.show()
 
@@ -178,17 +185,6 @@ class TeensyIO(object):
     def save_df(self, filename):
         self.df.to_csv(filename)
 
-def arbitrary_line_split(buf, newline='\n', return_if_empty=False):
-    left_over = ""
-    while True:
-        bytesToRead = buf.inWaiting()
-        lines = buf.read(bytesToRead).split(newline)
-        lines[0] = left_over + lines[0]
-        left_over = lines.pop()
-        if return_if_empty:
-            if (len(lines) == 0) and (left_over == ''):
-                return
-        yield lines
 
 
 def test_run():
