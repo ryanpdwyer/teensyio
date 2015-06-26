@@ -28,3 +28,58 @@ I rewrote the code getting the data from the serial port as a generator; it seem
 Next steps are adding a python method to set up the experiment, and adding code to actually run / simulate the experiment better on the Teensy.
 
 I should also check performance on Windows at some point, and check whether I can run this in an IPython notebook (It will probably / should probably open a new window for this).
+
+I have an initializer `serialInitCyclicVoltamettrySettings` which reads values from the serial port and then sets the appropriate value in the cvs structure.
+
+IV Curve
+========
+
+The immediate goal is to get a version of the code working to collect and display a current-voltage curve.
+
+Goals:
+
+- Allow current voltage curve to be collected from -3 to +3 volts, using op amps and a 9 V battery to level shift (or start with the Analog Discovery).
+- 2x amplifier 0 to 3 V to -3 to 3 V
+- Current to voltage converter, initially set such that 10 mA = 3 V
+- Max current setting; automatically reserve scan direction or stop?
+
+Let's start without most of these, just 0 to 3 V, with a 10 mA = 3 V current to voltage converting op-amp. The teensy DAC is 12-bit, so we have 0.7 mV per division with a 3 V range, 1.4 mV per division with a 6 V range.
+
+Split supply
+============
+
+See http://tangentsoft.net/elec/vgrounds.html for some interesting circuits.
+
+LT
+==
+
+LT1461CCS8-3.3 3.3 V voltage reference.
+
+LT application note an16f has some useful information on using the LT1050 as a buffer to decouple the capacitive response of the electrochemical cell.
+
+Switches
+========
+
+High quality analog switches are pretty expensive; the lowest noise option is surely a relay. Here are some parts to consider.
+
+CD4041 (basic CMOS part, 150 to 500 ohm on resistance, depending on supply voltage and signal level)
+
+TC4S66F,LF Cheap SPST switch on digikey. Probably the same, roughly, as the CD404.
+
+Coto 9007-05-00, cheap relay, non latching coil (latching coil would be better)
+
+I don't think I need relays, probably, at least not for current ranges down to say, 100 nA full scale. However, low / flat on resistance is important for this application. The ADG451/2 is probably a good option.
+
+The ADG1612 is also a really nice part. Only available in surface mount, but about 1.5 plus or minus 0.2 ohm on resistance, even at ±5 volt supplies.
+
+New Circuit Layout
+==================
+
+New circuit layout tries to do a good a job as possible with the parts I currently have on hand. The implementation is still a little unwieldly, 8 op-amps, a difference amplifier, voltage reference, 2 switches, and 2 current buffers.
+
+Digikey
+=======
+
+869-1002-ND is a reasonable priced solar cell, which would be fun to test. I can't think of any other really interesting systems, besides other kinds of solar cells. Transistors are interesting in theory, but they require 2 voltage sources, which is pretty annoying.
+
+A good jellybean op-amp for single supply / low voltage work is the TLV272, about a dollar in quantities of 1 to 10.

@@ -109,6 +109,28 @@ class TeensyIO(object):
     def __repr__(self):
         return "TeensyIO(port={s.port}, timeout={s.timeout})".format(s=self.s)
 
+    def send_cmd(self, cmd, printing=True):
+        self.s.write(cmd)
+        lines = self.s.readlines()
+        if printing:
+            for line in lines:
+                print(line)
+
+        return lines
+
+    def setup_cyclic_voltamettry(self, V_start=0, V_max=4095,
+                                 V_min=0, V_end=0, N_cycles=1, printing=True):
+        text = "E-CyclicVoltamettry {V_start} {V_max} {V_min} {V_end} {N_cycles} ".format(
+            V_start=V_start, V_max=V_max, V_min=V_min, V_end=V_end, N_cycles=N_cycles)
+
+        self.s.write(text)
+
+        self.s.write('p')
+
+        for line in self.s.readlines():
+            self.log.append(line)
+            if printing:
+                print(line)
 
     def run(self, timeout=1):
         """Run data acquisition for a certain length of time."""
@@ -122,11 +144,11 @@ class TeensyIO(object):
 
         self.s.write('s')
         for line in self.s.readlines():
-            parse_line_generic(line, self.d, self.log)
+            parse_line_generic(line, self.x, self.y, self.log)
 
-    def run_and_plot(self, frames=None):
+    def run_and_plot(self, xlim=(0, 4095), ylim=(0, 4095), frames=None):
         fig = plt.figure()
-        ax = plt.axes(xlim=(-32768, 2**16), ylim=(-32768, 32768))
+        ax = plt.axes(xlim=xlim, ylim=ylim)
         line, = ax.plot([], [])
 
 
@@ -202,7 +224,7 @@ def test_run():
 def test_plot():
     teensy_port = find_teensy()
     t = TeensyIO(teensy_port, timeout=1, baudrate=115200)
-    t.run_and_plot()
+    t.run_and_plot(xlim=(-32768, 2**16), ylim=(-32768, 32768))
     t.s.write('s')
     t.save_df('test_plot.csv')
     t.save('test_plot.log.txt')
