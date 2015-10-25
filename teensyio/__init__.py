@@ -19,6 +19,8 @@ import time
 import pandas as pd
 from time import sleep
 
+# import bunch
+
 def ls_ports():
     return [x for x in comports()]
 
@@ -90,12 +92,23 @@ def arbitrary_line_split(buf, newline='\n', return_if_empty=False):
                 return
         yield lines
 
+# Need a class to represent the circuit state. Current ranges, voltage ranges, etc.
+
+# cs = bunch.Bunch(
+#     dac_bit=12,
+#     adc_bits=12,
+#     self.v_max = 3.3,
+#     self.v_min = -3.3,
+#     )
+
 
 class TeensyIO(object):
 
     messages = ("Teensy reset", "Start acquisition", "Continuing", "Stopped")
 
     stop_message = "Done"
+
+    current_ranges = {'3uA': 3, '30uA':30, '300uA':300, '3mA':3000}    
 
     def __init__(self, port, timeout=1, x_name='x', y_name='y',
                                         x_scale=1,  y_scale=1, **kwargs):
@@ -113,38 +126,58 @@ class TeensyIO(object):
         self.s.write(cmd)
         lines = self.s.readlines()
         if printing:
-            for line in lines:
-                print(line)
+            print("".join(lines))
 
         return lines
 
     def setup_cyclic_voltamettry(self, V_start=0, V_max=4095,
-                                 V_min=0, V_end=0, N_cycles=1, printing=True):
-        text = "E-CyclicVoltamettry {V_start} {V_max} {V_min} {V_end} {N_cycles} ".format(
-            V_start=V_start, V_max=V_max, V_min=V_min, V_end=V_end, N_cycles=N_cycles)
+                                 V_min=0, V_end=0, N_cycles=1, current_range='3mA', printing=True):
+        """
+
+        Raises AttributeError if current range incorrect. Possible values:
+
+          3uA
+         30uA
+        300uA
+          3mA
+        """
+        cr = self.current_ranges[current_range]
+
+        text = "cv set {V_start} {V_max} {V_min} {V_end} {N_cycles} {cr} ".format(
+            V_start=V_start, V_max=V_max, V_min=V_min, V_end=V_end,
+            N_cycles=N_cycles, cr=cr)
 
         self.s.write(text)
 
-        self.s.write('p')
+        self.s.write('print quit ')
 
         for line in self.s.readlines():
             self.log.append(line)
             if printing:
-                print(line)
+                print(line.strip('\n'))
+
+
+
+    # def setup_cyclic_voltamettry(self, V_start=0, V_max=3.3, V_min=-3.3, V_end=0,
+    #     N_cycles=1, printing=True):
 
     def run(self, timeout=1):
         """Run data acquisition for a certain length of time."""
         start_time = time.time()
-        self.s.write('r')
+        self.s.write('cv run ')
         self.x = []
         self.y = []
         while time.time() < (start_time + timeout):
             line = self.s.readline().strip('\r\n')
             parse_line_generic(line, self.x, self.y, self.log)
 
-        self.s.write('s')
+        self.s.write('q')
+        self.s.write('quit ')
+        
         for line in self.s.readlines():
             parse_line_generic(line, self.x, self.y, self.log)
+
+
 
     def run_and_plot(self, xlim=(0, 4095), ylim=(0, 4095), frames=None):
         fig = plt.figure()
@@ -155,7 +188,7 @@ class TeensyIO(object):
         self.x = []
         self.y = []
 
-        self.s.write('r')
+        self.s.write('cv run ')
 
         gen = arbitrary_line_split(self.s)
 
@@ -171,7 +204,7 @@ class TeensyIO(object):
                 # I could check for "stop message if necessary."
                 print i
             except KeyboardInterrupt:
-                self.s.write('s')
+                self.s.write('q')
                 line.set_data(self.x, self.y)
                 raise
             
@@ -183,8 +216,8 @@ class TeensyIO(object):
                                         blit=True)
         
         plt.show()
-
-        self.s.write('s')
+        self.s.write('q ')
+        self.s.write('quit ')
 
         lines = self.s.readlines()
         for line in lines:

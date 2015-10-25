@@ -77,6 +77,8 @@ New Circuit Layout
 
 New circuit layout tries to do a good a job as possible with the parts I currently have on hand. The implementation is still a little unwieldly, 8 op-amps, a difference amplifier, voltage reference, 2 switches, and 2 current buffers.
 
+I'd like to OSHPark a nice implementation of this. Options: Should I use ±5 volt supplies from two batteries? That would let me use the LT1010. 
+
 Digikey
 =======
 
