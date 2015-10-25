@@ -31,7 +31,7 @@ cmdclass = versioneer.get_cmdclass()
 setup(
     name='teensyio',
     version=versioneer.get_version(),
-    description='"A clean interface for controlling data acquisition using the Teensy 3.1."',
+    description='A clean interface for controlling data acquisition using the Teensy 3.1.',
     long_description=readme + '\n\n' + doclink + '\n\n' + history,
     license='MIT',
     author='Ryan Dwyer',
